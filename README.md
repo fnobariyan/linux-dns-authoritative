@@ -191,16 +191,3 @@ www.mcloud.local
 * DNS Record Management
 * Command Line Administration
 * System Service Management (systemd)
-
----
-
-## Future Improvements
-
-* Reverse Lookup Zone
-* Secondary (Slave) DNS Server
-* DNSSEC
-* TSIG Authentication
-* Logging Configuration
-* ACL Configuration
-* Dynamic Updates
-* Split DNS
