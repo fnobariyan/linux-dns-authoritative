@@ -1,0 +1,11 @@
+# Verify Configuration and Start Bind
+
+named-checkconf /etc/named.conf
+
+named-checkzone mcloud.local /etc/named/zones/db.mcloud.local
+
+systemctl enable named
+
+systemctl restart named
+
+dig @192.168.56.102 www.mcloud.local
