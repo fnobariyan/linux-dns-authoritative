@@ -1,0 +1,47 @@
+# Bind Configurations
+
+cp /etc/named.conf ~/named.conf-14040510
+vim /etc/named.conf
+  
+# Add forwarders as acl  
+acl "forwarders" {
+        127.0.0.1;
+        192.168.56.102;
+};
+options {
+        listen-on port 53 { 127.0.0.1; 192.168.56.104; };
+        listen-on-v6 port 53 { none; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        secroots-file   "/var/named/data/named.secroots";
+        recursing-file  "/var/named/data/named.recursing";
+        allow-query     { forwarders; };
+
+        #Hide version for security
+        version " ";
+
+
+        recursion no;
+
+        dnssec-validation no;
+#Inserting the key obtained from NS1
+
+key "dnskey" {
+        algorithm hmac-sha512;
+        secret "etVLqUcsIt0y8PxHptLWsj9S600aavTjEuZK0LJeAKp6gxokIb0kuIzUWHybvyl0SmChrAKdzj4mozBUkvGNOw==";
+
+};
+
+server 192.168.56.102 {
+        keys { dnskey; };
+};
+
+# Add The End Of File
+zone "mcloud.local" {
+        type slave;
+        masters { 192.168.56.102; };
+        file "db.mcloud.local";
+}; 
+
