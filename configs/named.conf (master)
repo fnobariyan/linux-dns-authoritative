@@ -20,23 +20,29 @@ options {
         recursing-file  "/var/named/data/named.recursing";
         allow-query     { forwarders; };
 
-        #Hide version for security
-        version " ";
+        # Hide version for security
+        version" ";
 
 
 	recursion no;
 	dnssec-validation no;
-#Creat key and then put it here
+# Creat key and then put it here (tsig-keygen -a HMAC-sha512 dnskey)
+
 key "dnskey" {
         algorithm hmac-sha512;
         secret "etVLqUcsIt0y8PxHptLWsj9S600aavTjEuZK0LJeAKp6gxokIb0kuIzUWHybvyl0SmChrAKdzj4mozBUkvGNOw==";
 };
 
-# Add The End Of File
+# Creating Forward Dns zone
 zone "mcloud.local" {
         type master;
         file "/etc/named/zones/db.mcloud.local";
         allow-transfer { key "dnskey"; };
         notify yes;
         also-notify { 192.168.56.104; };
+};
+# Creating Reverse DNS zone
+zone "56.168.192.in-addr.arpa" {
+        type master;
+        file "/etc/named/zones/db.56.168.192.in-addr.arpa";
 };
