@@ -1,193 +1,192 @@
-# Authoritative DNS Server with BIND9
+DNS Infrastructure with BIND9
+Overview
 
-## Overview
+This project demonstrates the implementation of a complete DNS infrastructure using BIND9 on Linux.
 
-This project demonstrates how to configure an **Authoritative DNS Server** using **BIND9** on Linux.
+The environment consists of three DNS servers:
 
-The DNS server is responsible for providing authoritative answers for the local domain:
+Primary (Master) DNS Server
+Secondary (Slave) DNS Server
+Forwarding DNS Server
 
-```text
+The project also demonstrates:
+
+Forward and Reverse DNS Zones
+Secure Zone Transfers using TSIG Authentication
+DNS Forwarding
+Authoritative DNS Configuration
+Recursive DNS for Client Queries
+Network Topology
+Server	IP Address	Role
+Master DNS	192.168.56.102	Authoritative Primary DNS
+Forwarder DNS	192.168.56.103	Recursive Forwarding DNS
+Slave DNS	192.168.56.104	Authoritative Secondary DNS
+
+Domain:
+
 mcloud.local
-```
+Project Architecture
+                    Clients
+                       |
+                       |
+              +------------------+
+              | Forward DNS      |
+              | 192.168.56.103   |
+              +------------------+
+                    |
+        -----------------------------
+        |                           |
+        |                           |
++-------------------+      +-------------------+
+| Master DNS        |----->| Slave DNS         |
+| 192.168.56.102    | AXFR | 192.168.56.104    |
++-------------------+ TSIG +-------------------+
+Features
+Authoritative Master DNS Server
+Secondary DNS Server
+Automatic Zone Transfer
+TSIG Authentication
+Forward DNS Zone
+Reverse DNS Zone
+Recursive Forwarding Server
+Access Control Lists (ACL)
+DNS Notification (NOTIFY)
+Master DNS Server
 
-The project includes zone creation, DNS records configuration, and validation using standard BIND utilities.
+IP Address
 
----
+192.168.56.102
+Responsibilities
+Stores the original DNS zone files
+Authoritative for mcloud.local
+Maintains Forward Lookup Zone
+Maintains Reverse Lookup Zone
+Sends DNS NOTIFY messages
+Allows secure zone transfer using TSIG
+Configuration Highlights
+Recursion disabled
+ACL configured for trusted clients
+TSIG key authentication
+Automatic NOTIFY
+Reverse lookup support
+Slave DNS Server
 
-## Environment
+IP Address
 
-| Component        | Value                    |
-| ---------------- | ------------------------ |
-| Operating System | Rocky Linux / RHEL 9     |
-| DNS Software     | BIND9 (named)            |
-| DNS Role         | Authoritative DNS Server |
-| Domain           | mcloud.local             |
-| Server Hostname  | ns1                      |
-| DNS Server IP    | 192.168.56.102           |
+192.168.56.104
+Responsibilities
+Receives zone data from the Master
+Provides redundancy
+Answers authoritative queries
+Synchronizes automatically after zone updates
+Configuration Highlights
+Slave Zone
+TSIG authentication
+Automatic synchronization
+No recursion
+Forwarding DNS Server
 
----
+IP Address
 
-## Network Configuration
+192.168.56.103
+Responsibilities
+Receives client DNS requests
+Performs recursive lookups
+Forwards requests for mcloud.local to the authoritative DNS servers
+Configuration Highlights
+Recursive DNS enabled
+Forward Only Mode
+Uses both Master and Slave as forwarders
+Security
 
-| Interface | IP Address     | Purpose               |
-| --------- | -------------- | --------------------- |
-| enp0s3    | 192.168.56.102 | Host-Only Network     |
-| enp0s8    | 10.0.2.15      | NAT (Internet Access) |
+Implemented security mechanisms include:
 
----
+TSIG authentication using HMAC-SHA512
+Restricted zone transfers
+ACL-based query restrictions
+Hidden BIND version
+Disabled DNSSEC (Lab Environment)
+DNS Zones
 
-## DNS Architecture
+Forward Zone
 
-```
-                     Client
-                        |
-                        |
-                +----------------+
-                |  ns1           |
-                |  BIND9         |
-                | Authoritative  |
-                +----------------+
-                        |
-          -------------------------------
-          |             |              |
-       ns1           www             lms
- 192.168.56.102 192.168.56.160 192.168.56.170
-```
-
----
-
-## Zone Configuration
-
-Zone Name
-
-```
 mcloud.local
-```
 
-Example records
+Reverse Zone
 
-| Record | Type | Address        |
-| ------ | ---- | -------------- |
-| @      | A    | 192.168.56.102 |
-| ns1    | A    | 192.168.56.102 |
-| www    | A    | 192.168.56.160 |
-| lms    | A    | 192.168.56.170 |
+56.168.192.in-addr.arpa
+Zone Transfer
 
-Name Server
+The Master DNS server allows zone transfers only to the authorized Slave server using TSIG authentication.
 
-```
-NS  ns1.mcloud.local.
-```
+Master
+   |
+   |  AXFR + TSIG
+   |
+Slave
 
----
+This prevents unauthorized servers from downloading DNS zone data.
 
-## named.conf
+Useful Commands
 
-The server is configured as a **Master (Primary) DNS Server**.
+Validate Configuration
 
-Important configuration:
-
-```conf
-recursion no;
-
-zone "mcloud.local" {
-    type master;
-    file "/etc/named/zones/db.mcloud.local";
-};
-```
-
-Since this server is authoritative, recursion is disabled.
-
----
-
-## Directory Structure
-
-```
-/etc/named.conf
-
-/etc/named.rfc1912.zones
-
-/etc/named/zones/
-└── db.mcloud.local
-```
-
----
-
-## Validation
-
-Check zone syntax
-
-```bash
-named-checkzone mcloud.local /etc/named/zones/db.mcloud.local
-```
-
-Check BIND configuration
-
-```bash
 named-checkconf
-```
+
+Validate Zone File
+
+named-checkzone mcloud.local db.mcloud.local
 
 Restart BIND
 
-```bash
 systemctl restart named
-```
 
-Enable service
+Enable Service
 
-```bash
 systemctl enable named
-```
 
-Check status
+Check Service Status
 
-```bash
 systemctl status named
-```
+Testing
 
----
+Forward Lookup
 
-## Testing
+dig @192.168.56.102 server1.mcloud.local
 
-Query the DNS server
+Reverse Lookup
 
-```bash
-dig @192.168.56.102 www.mcloud.local
-```
+dig -x 192.168.56.X
 
-or
+Query Slave
 
-```bash
-nslookup www.mcloud.local 192.168.56.102
-```
+dig @192.168.56.104 server1.mcloud.local
 
-Expected Result
+Query Forwarder
 
-```
-www.mcloud.local
+dig @192.168.56.103 server1.mcloud.local
 
-192.168.56.160
-```
+Verify Zone Transfer
 
----
+rndc reload
+journalctl -u named
+Technologies Used
+BIND9
+Linux
+DNS
+TSIG
+AXFR
+ACL
+Forward DNS
+Reverse DNS
+Learning Outcomes
 
-## Project Objectives
+Through this project, I gained hands-on experience with:
 
-* Deploy an Authoritative DNS Server using BIND9
-* Configure Forward Lookup Zone
-* Create A and NS records
-* Validate BIND configuration
-* Test DNS name resolution
-* Practice Linux network services
-
----
-
-## Skills Demonstrated
-
-* Linux Administration
-* BIND9 DNS Configuration
-* DNS Zone Management
-* Network Troubleshooting
-* DNS Record Management
-* Command Line Administration
-* System Service Management (systemd)
+Building an authoritative DNS infrastructure
+Configuring Primary and Secondary DNS servers
+Implementing secure zone transfers
+Configuring recursive forwarding
+Creating Forward and Reverse DNS zones
+Applying DNS security best practices
+Troubleshooting BIND9 configurations
