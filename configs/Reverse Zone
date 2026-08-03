@@ -1,1 +1,18 @@
+# Copy and edit forward zone
+
+cp /etc/named/zones/db.mcloud.local  /etc/named/zones/db.56.168.192.in-addr.arpa
+
+vi /etc/named/zones/db.56.168.192.in-addr.arpa
+# 
+$TTL 3H
+@       IN SOA  @ rname.invalid. (
+                                        4       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+        NS      ns1.mcloud.local.
+102     PTR     ns1.mcloud.local.
+162     PTR     www.mcloud.local.
+171     PTR     lms.mcloud.local.
 
